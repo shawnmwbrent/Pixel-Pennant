@@ -1,0 +1,15 @@
+.gradle/
+build/
+*/build/
+android/build/
+**/build/
+*.apk
+*.aab
+*.apks
+*.dex
+*.class
+android/src/main/jniLibs/
+local.properties
+*.iml
+.idea/
+gradle/wrapper/gradle-wrapper.jar
