@@ -1,0 +1,65 @@
+package com.pixelpennant.engine;
+
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+
+class BaseballGameTest {
+    @Test void threeStrikesRecordAnOutAndResetTheCount() {
+        BaseballGame game = new BaseballGame(3);
+        game.recordStrike(); game.recordStrike(); game.recordStrike();
+        assertEquals(1, game.outs());
+        assertEquals(0, game.strikes());
+        assertEquals(0, game.balls());
+    }
+
+    @Test void fourBallsWalkTheBatterAndForceHomeARun() {
+        BaseballGame game = new BaseballGame(3);
+        walk(game); walk(game); walk(game); walk(game);
+        assertEquals(1, game.awayRuns());
+        assertArrayEquals(new boolean[]{true, true, true}, game.bases());
+        assertEquals(0, game.balls());
+    }
+
+    @Test void singleAdvancesRunnersAndCountsHit() {
+        BaseballGame game = new BaseballGame(3);
+        game.recordHit(1); game.recordHit(1); game.recordHit(1); game.recordHit(1);
+        assertEquals(1, game.awayRuns());
+        assertEquals(4, game.awayHits());
+    }
+
+    @Test void threeOutsSwapSidesAndSixOutsAdvanceInning() {
+        BaseballGame game = new BaseballGame(3);
+        threeOuts(game);
+        assertEquals(Half.BOTTOM, game.half());
+        assertEquals(1, game.inning());
+        assertTrue(game.isTorontoBatting());
+        threeOuts(game);
+        assertEquals(Half.TOP, game.half());
+        assertEquals(2, game.inning());
+    }
+
+    @Test void gameEndsAfterChosenInningsWhenScoreIsNotTied() {
+        BaseballGame game = new BaseballGame(3);
+        game.recordHomeRun();
+        for (int half = 0; half < 6; half++) threeOuts(game);
+        assertTrue(game.isGameOver());
+        assertEquals(3, game.lineScore().innings());
+        assertEquals(1, game.awayRuns());
+    }
+
+    @Test void playerRatingsAreValidatedAndIdentityIsStable() {
+        Player player = new Player("tor-01", "Maya", "Finch", Position.C,
+                new PlayerRatings(72, 64, 81, 69, 75));
+        assertEquals("Maya Finch", player.displayName());
+        assertEquals(81, player.ratings().speed());
+        assertThrows(IllegalArgumentException.class,
+                () -> new PlayerRatings(101, 50, 50, 50, 50));
+    }
+
+    private static void walk(BaseballGame game) {
+        for (int i = 0; i < 4; i++) game.recordBall();
+    }
+    private static void threeOuts(BaseballGame game) {
+        game.recordOut(); game.recordOut(); game.recordOut();
+    }
+}

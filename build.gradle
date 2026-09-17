@@ -1,0 +1,15 @@
+plugins {
+    id 'com.android.application' version '8.7.3' apply false
+}
+
+ext {
+    appName = 'Pixel Pennant'
+    gdxVersion = '1.13.1'
+}
+
+project(':core') {
+    apply plugin: 'java-library'
+    java.sourceCompatibility = JavaVersion.VERSION_17
+    java.targetCompatibility = JavaVersion.VERSION_17
+    tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
+}
