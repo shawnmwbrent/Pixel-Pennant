@@ -76,6 +76,7 @@ public final class PixelPennantGame extends ApplicationAdapter {
         if (scene == Scene.TITLE) drawTitle(); else if (scene == Scene.INNINGS) drawInnings();
         else if (scene == Scene.PLAY) drawGame(); else drawFinal();
         drawButtons();
+        endDrawing();
     }
 
     private void drawTitle() {
@@ -181,9 +182,10 @@ public final class PixelPennantGame extends ApplicationAdapter {
     private void drawButtons(){for(Button b:buttons){beginShapes();rect(b.x,b.y,b.w,b.h,blue);rect(b.x+5,b.y+5,b.w-10,b.h-10,navy);label(b.label,b.x+14,b.y+b.h/2+7,cream,.7f);}}
     private void beginShapes(){if(batch.isDrawing())batch.end();if(!shapes.isDrawing())shapes.begin(ShapeRenderer.ShapeType.Filled);}
     private void beginBatch(){if(shapes.isDrawing())shapes.end();if(!batch.isDrawing())batch.begin();}
-    private void rect(float x,float y,float w,float h,Color c){shapes.setColor(c);shapes.rect(x,y,w,h);}
-    private void tri(float x1,float y1,float x2,float y2,float x3,float y3,Color c){shapes.setColor(c);shapes.triangle(x1,y1,x2,y2,x3,y3);}
+    private void rect(float x,float y,float w,float h,Color c){beginShapes();shapes.setColor(c);shapes.rect(x,y,w,h);}
+    private void tri(float x1,float y1,float x2,float y2,float x3,float y3,Color c){beginShapes();shapes.setColor(c);shapes.triangle(x1,y1,x2,y2,x3,y3);}
     private void diamond(float x,float y,float r,Color c){tri(x,y+r,x-r,y,x,y-r,c);tri(x,y+r,x+r,y,x,y-r,c);}
     private void label(String text,float x,float y,Color c,float scale){beginBatch();font.getData().setScale(scale);font.setColor(c);font.draw(batch,text,x,y);}
-    @Override public void dispose(){if(batch.isDrawing())batch.end();if(shapes.isDrawing())shapes.end();batch.dispose();shapes.dispose();font.dispose();}
+    private void endDrawing(){if(batch.isDrawing())batch.end();if(shapes.isDrawing())shapes.end();}
+    @Override public void dispose(){endDrawing();batch.dispose();shapes.dispose();font.dispose();}
 }
