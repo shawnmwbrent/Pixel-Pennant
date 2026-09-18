@@ -5,6 +5,7 @@ plugins {
 ext {
     appName = 'Pixel Pennant'
     gdxVersion = '1.13.1'
+    desugarJdkLibsVersion = '2.1.5'
 }
 
 project(':core') {
