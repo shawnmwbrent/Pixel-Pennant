@@ -35,4 +35,9 @@ public final class Player {
     }
 
     @Override public int hashCode() { return Objects.hash(id, firstName, lastName, position, ratings); }
+
+    @Override public String toString() {
+        return "Player[id=" + id + ", firstName=" + firstName + ", lastName=" + lastName
+                + ", position=" + position + ", ratings=" + ratings + "]";
+    }
 }

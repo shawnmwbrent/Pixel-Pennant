@@ -37,4 +37,9 @@ public final class PlayerRatings {
     }
 
     @Override public int hashCode() { return Objects.hash(contact, power, speed, fielding, pitching); }
+
+    @Override public String toString() {
+        return "PlayerRatings[contact=" + contact + ", power=" + power + ", speed=" + speed
+                + ", fielding=" + fielding + ", pitching=" + pitching + "]";
+    }
 }

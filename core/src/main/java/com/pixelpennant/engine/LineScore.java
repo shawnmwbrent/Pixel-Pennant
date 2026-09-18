@@ -30,4 +30,9 @@ public final class LineScore {
     }
 
     @Override public int hashCode() { return Objects.hash(away, home, awayHits, homeHits); }
+
+    @Override public String toString() {
+        return "LineScore[away=" + away + ", home=" + home + ", awayHits=" + awayHits
+                + ", homeHits=" + homeHits + "]";
+    }
 }

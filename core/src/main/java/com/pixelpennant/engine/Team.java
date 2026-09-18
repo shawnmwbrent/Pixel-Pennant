@@ -30,4 +30,8 @@ public final class Team {
     }
 
     @Override public int hashCode() { return Objects.hash(id, city, name, roster); }
+
+    @Override public String toString() {
+        return "Team[id=" + id + ", city=" + city + ", name=" + name + ", roster=" + roster + "]";
+    }
 }

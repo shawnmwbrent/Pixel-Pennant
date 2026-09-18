@@ -63,6 +63,19 @@ class BaseballGameTest {
         assertFalse(LineScore.class.isRecord());
     }
 
+    @Test void immutableClassesRetainRecordStyleValueSemantics() {
+        PlayerRatings ratings = new PlayerRatings(72, 64, 81, 69, 75);
+        Player first = new Player("tor-01", "Maya", "Finch", Position.C, ratings);
+        Player same = new Player("tor-01", "Maya", "Finch", Position.C,
+                new PlayerRatings(72, 64, 81, 69, 75));
+
+        assertEquals(first, same);
+        assertEquals(first.hashCode(), same.hashCode());
+        assertEquals("PlayerRatings[contact=72, power=64, speed=81, fielding=69, pitching=75]",
+                ratings.toString());
+        assertTrue(first.toString().startsWith("Player[id=tor-01, firstName=Maya"));
+    }
+
     private static void walk(BaseballGame game) {
         for (int i = 0; i < 4; i++) game.recordBall();
     }
