@@ -151,28 +151,43 @@ public final class PixelPennantGame extends ApplicationAdapter {
         rect(0,134,W,225,grass); tri(480,145,100,359,860,359,Color.valueOf("2AA65A"));
         tri(480,155,310,315,650,315,Color.valueOf("D6A05E"));
         diamond(480,255,82,Color.valueOf("E8C47D")); diamond(480,246,7,Color.WHITE);
-        // Tiny automatic fielders.
-        for (int[] p : new int[][]{{480,300},{390,270},{570,270},{330,325},{630,325}}) { rect(p[0]-5,p[1],10,17,orange); rect(p[0]-4,p[1]+17,8,8,cream); }
+        // Larger, readable defensive players.
+        drawPlayer(480,300,orange,false);
+        for (int[] p : new int[][]{{390,270},{570,270},{330,325},{630,325}}) {
+            float px=p[0], py=p[1];
+            if(fielderT>0f){float q=1f-fielderT; px=MathUtils.lerp(px,fieldBallX,q*.72f); py=MathUtils.lerp(py,fieldBallY,q*.72f);}
+            drawPlayer(px,py,orange,false);
+        }
+        if(game != null && game.isTorontoBatting()) drawBatter(425,205,cyan);
     }
     private void drawPlayer(float x,float y,Color jersey,boolean batter){
         beginShapes();
-        shapes.setColor(cream); shapes.circle(x,y+23,6,10);
-        shapes.setColor(jersey); shapes.rect(x-6,y+7,12,16);
-        shapes.setColor(navy); shapes.rect(x-6,y,4,8); shapes.rect(x+2,y,4,8);
+        shapes.setColor(cream); shapes.circle(x,y+30,8,10);
+        shapes.setColor(jersey); shapes.rect(x-9,y+9,18,21);
+        shapes.setColor(navy); shapes.rect(x-9,y,6,10); shapes.rect(x+3,y,6,10);
+        shapes.setColor(jersey); shapes.rect(x-14,y+16,5,6); shapes.rect(x+9,y+16,5,6);
         if(batter){ shapes.setColor(cream); shapes.rect(x+7,y+10,4,25); }
     }
     private void drawBatter(float x,float y,Color jersey){
         drawPlayer(x,y,jersey,true);
         beginShapes(); shapes.setColor(cream);
-        float a=swingT>0f?(1f-swingT)*30f:0f;
-        shapes.rect(x+7+a*.35f,y+10+a*.2f,4,28);
+        float p=swingT>0f?(1f-swingT):0f;
+        float bx=x+13+(p*20f), by=y+17+(p*8f);
+        shapes.rect(bx,by,5,34);
     }
     private void drawAtBatAnimation(){
         if(!batterPitchActive || phase!=Phase.BATTING)return;
         float t=MathUtils.clamp(pitchVisualT,0,1);
-        float x=MathUtils.lerp(480,458,t), y=MathUtils.lerp(300,245,t);
-        beginShapes(); shapes.setColor(Color.WHITE); shapes.circle(x,y,6+4*t,12);
-        if(t>.72f) { shapes.setColor(cyan); shapes.circle(aimX,aimY,18,14); }
+        // Pitch starts at the mound and grows slightly as it approaches home plate.
+        float x=MathUtils.lerp(480,455,t), y=MathUtils.lerp(310,225,t);
+        beginShapes();
+        shapes.setColor(new Color(1f,1f,1f,.35f));
+        shapes.circle(MathUtils.lerp(480,455,Math.max(0,t-.12f)),MathUtils.lerp(310,225,Math.max(0,t-.12f)),4+4*t,10);
+        shapes.setColor(Color.WHITE); shapes.circle(x,y,7+5*t,12);
+        if(t>.68f) {
+            shapes.setColor(cyan); shapes.circle(aimX,aimY,6,12);
+        }
+        if(t>.82f) label("SWING!",535,245,cream,1.05f);
     }
     private void drawScoreboard() {
         panel(18,410,924,112); label("DET MOTORS",38,490,orange,1.0f); label("TOR BLUEBIRDS",38,450,cyan,1.0f);
@@ -235,6 +250,7 @@ public final class PixelPennantGame extends ApplicationAdapter {
         }
     }
     private void bat(boolean bunt) {
+        swingT=1f; batterPitchActive=false; pitchVisualT=0f;
         float distance=Math.abs(aimX-480)+Math.abs(aimY-265);
         float skill=MathUtils.random()+meterQuality()*.45f-distance/350f+(bunt?.05f:0);
         if(skill<.34f){game.recordStrike();message="SWING AND A MISS";callPlay("MISS!");animateBall(458,238,480,205);nextPitch();}
