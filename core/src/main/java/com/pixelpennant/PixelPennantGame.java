@@ -50,6 +50,7 @@ public final class PixelPennantGame extends ApplicationAdapter {
     private float ballT = 0f, ballFromX = 480f, ballFromY = 300f, ballToX = 480f, ballToY = 215f;
     private float runnerT = 0f;
     private int runnerFrom = 0, runnerTo = 0;
+    private float fielderT = 0f, fieldBallX = 480f, fieldBallY = 315f;
     private final Color navy = Color.valueOf("071B35"), blue = Color.valueOf("178BDB");
     private final Color cyan = Color.valueOf("52D9FF"), cream = Color.valueOf("FFF3C4");
     private final Color orange = Color.valueOf("FF7A32"), grass = Color.valueOf("218C4A");
@@ -79,6 +80,7 @@ public final class PixelPennantGame extends ApplicationAdapter {
         if (playCallTimer > 0f) playCallTimer = Math.max(0f, playCallTimer - dt);
         if (ballAnimating) { ballT += dt * 2.8f; if (ballT >= 1f) { ballT = 1f; ballAnimating = false; } }
         if (runnerT > 0f) runnerT = Math.max(0f, runnerT - dt * 1.8f);
+        if (fielderT > 0f) fielderT = Math.max(0f, fielderT - dt * 1.5f);
         Gdx.gl.glClearColor(.02f,.06f,.12f,1); Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         viewport.apply(); shapes.setProjectionMatrix(viewport.getCamera().combined); batch.setProjectionMatrix(viewport.getCamera().combined);
         buttons.clear();
@@ -93,7 +95,7 @@ public final class PixelPennantGame extends ApplicationAdapter {
         // Original geometric bird/pennant mark.
         tri(480,410,390,300,570,300,blue); tri(480,395,435,330,525,330,cyan);
         label("PIXEL", 397, 265, cream, 2.4f); label("PENNANT", 354, 205, cyan, 2.4f);
-        label("V0.1.0  •  HARBOUR LIGHT PARK", 314, 170, cream, .85f);
+        label("V0.1.1  •  HARBOUR LIGHT PARK", 314, 170, cream, .85f);
         button(350,65,260,70,"PLAY GAME", () -> scene = Scene.INNINGS);
     }
     private void drawInnings() {
@@ -143,6 +145,13 @@ public final class PixelPennantGame extends ApplicationAdapter {
         // Tiny automatic fielders.
         for (int[] p : new int[][]{{480,300},{390,270},{570,270},{330,325},{630,325}}) { rect(p[0]-5,p[1],10,17,orange); rect(p[0]-4,p[1]+17,8,8,cream); }
     }
+    private void drawPlayer(float x,float y,Color jersey,boolean batter){
+        beginShapes();
+        shapes.setColor(cream); shapes.circle(x,y+23,6,10);
+        shapes.setColor(jersey); shapes.rect(x-6,y+7,12,16);
+        shapes.setColor(navy); shapes.rect(x-6,y,4,8); shapes.rect(x+2,y,4,8);
+        if(batter){ shapes.setColor(cream); shapes.rect(x+7,y+10,4,25); }
+    }
     private void drawScoreboard() {
         panel(18,410,924,112); label("DET MOTORS",38,490,orange,1.0f); label("TOR BLUEBIRDS",38,450,cyan,1.0f);
         label(String.valueOf(game.awayRuns()),235,490,cream,1f); label(String.valueOf(game.homeRuns()),235,450,cream,1f);
@@ -162,6 +171,7 @@ public final class PixelPennantGame extends ApplicationAdapter {
     private float meterQuality() { return 1f-Math.abs(meter-.5f)*2f; }
     private void callPlay(String text){ playCall=text; playCallTimer=1.25f; }
     private void animateBall(float x1,float y1,float x2,float y2){ballFromX=x1;ballFromY=y1;ballToX=x2;ballToY=y2;ballT=0;ballAnimating=true;}
+    private void fieldersChase(float x,float y){fieldBallX=x;fieldBallY=y;fielderT=1f;}
     private void drawPlayAnimation(){
         if(ballAnimating){
             float t=MathUtils.clamp(ballT,0,1), x=MathUtils.lerp(ballFromX,ballToX,t), y=MathUtils.lerp(ballFromY,ballToY,t);
@@ -178,15 +188,15 @@ public final class PixelPennantGame extends ApplicationAdapter {
         else if (MathUtils.random() < .42f + quality * .32f) {
             game.recordStrike(); message="STRIKE — painted the zone"; callPlay("STRIKE!"); nextPitch();
         } else {
-            phase=Phase.FIELDING; message="IN PLAY — fielders pursuing!"; callPlay("IN PLAY!"); animateBall(480,215,MathUtils.random(300,660),MathUtils.random(300,350));
+            phase=Phase.FIELDING; message="IN PLAY — FIELDERS CHASING!"; callPlay("IN PLAY!"); float fx=MathUtils.random(300,660), fy=MathUtils.random(300,350); animateBall(480,215,fx,fy); fieldersChase(fx,fy);
         }
     }
     private void bat(boolean bunt) {
         float distance=Math.abs(aimX-480)+Math.abs(aimY-265);
         float skill=MathUtils.random()+meterQuality()*.45f-distance/350f+(bunt?.05f:0);
         if(skill<.34f){game.recordStrike();message="SWING AND A MISS";callPlay("MISS!");animateBall(480,300,480,205);nextPitch();}
-        else if(skill<.55f){game.recordOut();message=bunt?"BUNT — OUT AT FIRST":"GROUNDER — OUT";callPlay("OUT!");animateBall(480,215,565,300);nextPitch();}
-        else { int bases=skill>.98f&&!bunt?2:1;game.recordHit(bases);phase=Phase.RUNNING;message=bases==2?"DOUBLE — INTO THE GAP!":"SINGLE — CLEAN BASE HIT!";callPlay(bases==2?"DOUBLE!":"SINGLE!");animateBall(480,215,MathUtils.random(300,660),MathUtils.random(315,350));runnerT=1f;checkEnd(); }
+        else if(skill<.55f){game.recordOut();message=bunt?"BUNT — OUT AT FIRST":"GROUNDER — OUT";callPlay("OUT!");animateBall(480,215,565,300);fieldersChase(565,300);nextPitch();}
+        else { int bases=skill>.98f&&!bunt?2:1;game.recordHit(bases);phase=Phase.RUNNING;message=bases==2?"DOUBLE — INTO THE GAP!":"SINGLE — CLEAN BASE HIT!";callPlay(bases==2?"DOUBLE!":"SINGLE!");float hx=MathUtils.random(300,660), hy=MathUtils.random(315,350);animateBall(480,215,hx,hy);fieldersChase(hx,hy);runnerT=1f;checkEnd(); }
     }
     private void throwBase(int base) { boolean out=MathUtils.random()<.62f+(base==1?.14f:0); animateBall(480,320,base==1?565:base==2?480:base==3?395:480,base==4?246:300); if(out){game.recordOut();message="THROW IN TIME — OUT!";callPlay("OUT!");}else{game.recordHit(1);message="SAFE — BASE HIT!";callPlay("SAFE!");runnerT=1f;} checkEnd(); if(scene==Scene.PLAY){phase=Phase.RUNNING;} }
     private void runChoice(int choice) { message=choice>0?"RUNNERS ADVANCE":choice<0?"RUNNERS RETURN":"RUNNERS HOLD"; callPlay(choice>0?"ADVANCE!":choice<0?"RETURN!":"HOLD!"); if(choice>0)runnerT=1f; nextPitch(); }
