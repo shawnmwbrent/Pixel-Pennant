@@ -131,10 +131,11 @@ public final class PixelPennantGame extends ApplicationAdapter {
             rect(245,45,470,28,Color.DARK_GRAY); rect(255,51,450*meter,16, meterQuality()>0.7f?cyan:orange);
             button(375,78,210,46,"SET POWER",this::resolvePitch);
         } else if (phase == Phase.BATTING) {
-            drawTarget();
-            button(35,39,78,42,"LEFT",()->moveAim(-18,0)); button(119,39,78,42,"RIGHT",()->moveAim(18,0));
-            button(77,85,78,38,"UP",()->moveAim(0,18)); button(77,2,78,35,"DOWN",()->moveAim(0,-18));
-            button(615,40,140,62,"SWING",()->bat(false)); button(770,40,140,62,"BUNT",()->bat(true));
+            drawBattingZone(); drawTarget();
+            label("AIM",70,105,cyan,.72f);
+            button(32,52,72,38,"LEFT",()->moveAim(-12,0)); button(184,52,72,38,"RIGHT",()->moveAim(12,0));
+            button(108,83,72,38,"UP",()->moveAim(0,12)); button(108,21,72,38,"DOWN",()->moveAim(0,-12));
+            button(615,34,145,70,"SWING",()->bat(false)); button(775,34,145,70,"BUNT",()->bat(true));
         } else if (phase == Phase.FIELDING) {
             label("FIELDERS PURSUING - THROW TO:",267,75,cyan,.7f);
             button(220,27,120,48,"1ST",()->throwBase(1)); button(355,27,120,48,"2ND",()->throwBase(2));
@@ -169,8 +170,8 @@ public final class PixelPennantGame extends ApplicationAdapter {
     private void drawAtBatAnimation(){
         if(!batterPitchActive || phase!=Phase.BATTING)return;
         float t=MathUtils.clamp(pitchVisualT,0,1);
-        float x=MathUtils.lerp(480,458,t), y=MathUtils.lerp(300,238,t);
-        beginShapes(); shapes.setColor(Color.WHITE); shapes.circle(x,y,4+3*t,10);
+        float x=MathUtils.lerp(480,458,t), y=MathUtils.lerp(300,245,t);
+        beginShapes(); shapes.setColor(Color.WHITE); shapes.circle(x,y,6+4*t,12);
         if(t>.72f) { shapes.setColor(cyan); shapes.circle(aimX,aimY,18,14); }
     }
     private void drawScoreboard() {
@@ -190,18 +191,25 @@ public final class PixelPennantGame extends ApplicationAdapter {
         shapes.line(385,233,575,233); shapes.line(385,297,575,297);
         shapes.end(); shapes.begin(ShapeRenderer.ShapeType.Filled);
     }
+    private void drawBattingZone() {
+        beginShapes(); shapes.end(); shapes.begin(ShapeRenderer.ShapeType.Line);
+        shapes.setColor(cream); shapes.rect(430,205,100,100);
+        shapes.line(463,205,463,305); shapes.line(497,205,497,305);
+        shapes.line(430,238,530,238); shapes.line(430,272,530,272);
+        shapes.end(); shapes.begin(ShapeRenderer.ShapeType.Filled);
+    }
     private void drawTarget() {
-        beginShapes(); shapes.setColor(cyan); shapes.circle(aimX,aimY,5,12);
+        beginShapes(); shapes.setColor(cyan); shapes.circle(aimX,aimY,4,10);
         shapes.end(); shapes.begin(ShapeRenderer.ShapeType.Line);
-        shapes.setColor(cyan); shapes.circle(aimX,aimY,24,16);
-        shapes.line(aimX-34,aimY,aimX+34,aimY); shapes.line(aimX,aimY-34,aimX,aimY+34);
+        shapes.setColor(cyan); shapes.circle(aimX,aimY,12,14);
+        shapes.line(aimX-18,aimY,aimX+18,aimY); shapes.line(aimX,aimY-18,aimX,aimY+18);
         shapes.end(); shapes.begin(ShapeRenderer.ShapeType.Filled);
     }
 
     private void choosePitch(String value) { pitch=value; phase=Phase.PITCH_LOCATION; message=value+"BALL - PICK A SPOT"; }
     private void moveAim(float dx, float dy) {
-        aimX = MathUtils.clamp(aimX + dx, 385, 575);
-        aimY = MathUtils.clamp(aimY + dy, 170, 360);
+        aimX = MathUtils.clamp(aimX + dx, 435, 525);
+        aimY = MathUtils.clamp(aimY + dy, 210, 300);
     }
     private float meterQuality() { return 1f-Math.abs(meter-.5f)*2f; }
     private void callPlay(String text){ playCall=text; playCallTimer=1.25f; }
