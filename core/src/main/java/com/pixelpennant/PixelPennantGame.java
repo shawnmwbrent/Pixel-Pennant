@@ -52,6 +52,8 @@ public final class PixelPennantGame extends ApplicationAdapter {
     private int runnerFrom = 0, runnerTo = 0;
     private float fielderT = 0f, fieldBallX = 480f, fieldBallY = 315f;
     private float swingT = 0f, pitchVisualT = 0f, crowdCheerT = 0f;
+    private String crowdCall = "";
+    private float crowdCallT = 0f;
     private boolean batterPitchActive = false;
     private final Color navy = Color.valueOf("071B35"), blue = Color.valueOf("178BDB");
     private final Color cyan = Color.valueOf("52D9FF"), cream = Color.valueOf("FFF3C4");
@@ -85,6 +87,7 @@ public final class PixelPennantGame extends ApplicationAdapter {
         if (fielderT > 0f) fielderT = Math.max(0f, fielderT - dt * 1.5f);
         if (swingT > 0f) swingT = Math.max(0f, swingT - dt * 4f);
         if (crowdCheerT > 0f) crowdCheerT = Math.max(0f, crowdCheerT - dt);
+        if (crowdCallT > 0f) crowdCallT = Math.max(0f, crowdCallT - dt);
         if (scene == Scene.PLAY && phase == Phase.BATTING) {
             pitchVisualT += dt * .7f;
             if (pitchVisualT >= 1f) pitchVisualT = 0f;
@@ -116,7 +119,7 @@ public final class PixelPennantGame extends ApplicationAdapter {
     private void start(int innings) { chosenInnings=innings; game=new BaseballGame(innings); phase=Phase.PITCH_TYPE; message="CHOOSE YOUR PITCH"; playCall=""; playCallTimer=0; ballAnimating=false; scene=Scene.PLAY; }
 
     private void drawGame() {
-        drawBallpark(); drawScoreboard(); drawPlayAnimation(); drawAtBatAnimation(); panel(18,18,924,116);
+        drawBallpark(); drawScoreboard(); drawPlayAnimation(); drawAtBatAnimation(); drawCrowdCall(); panel(18,18,924,116);
         label(message,38,112,cream,1.28f);
         label(game.isTorontoBatting() ? "TORONTO AT BAT" : "DETROIT AT BAT", 690,112, game.isTorontoBatting()?cyan:orange,.72f);
         if (playCallTimer > 0f && !playCall.isEmpty()) {
@@ -229,7 +232,15 @@ public final class PixelPennantGame extends ApplicationAdapter {
         beginShapes(); shapes.setColor(cyan); shapes.circle(x,y+18,6,10);
         shapes.rect(x-7,y+5,14,13); shapes.setColor(Color.WHITE); shapes.rect(x-6,y,4,6); shapes.rect(x+2,y,4,6);
     }
-    private void cheerHomeCrowd(){ if(game!=null && game.isTorontoBatting()) crowdCheerT=1.6f; }
+    private void cheerCrowd(String call, boolean homePlay){
+        crowdCall=call; crowdCallT=1.7f;
+        if(homePlay) crowdCheerT=1.7f;
+    }
+    private void drawCrowdCall(){
+        if(crowdCallT<=0f || crowdCall.isEmpty()) return;
+        panel(370,365,220,42);
+        label(crowdCall,395,394,cream,.92f);
+    }
 
     private void drawZone() {
         beginShapes();
@@ -278,7 +289,7 @@ public final class PixelPennantGame extends ApplicationAdapter {
         float quality=meterQuality(); meter=0; animateBall(480,300,aimX,190);
         if (quality<.25f) { game.recordBall(); message="BALL - outside"; callPlay("BALL!"); nextPitch(); }
         else if (MathUtils.random() < .42f + quality * .32f) {
-            game.recordStrike(); message="STRIKE - painted the zone"; callPlay("STRIKE!"); nextPitch();
+            game.recordStrike(); message="STRIKE - painted the zone"; callPlay("STRIKE!"); cheerCrowd("BIG STRIKE!", false); nextPitch();
         } else {
             phase=Phase.FIELDING; message="IN PLAY - FIELDERS CHASING!"; callPlay("IN PLAY!"); float fx=MathUtils.random(300,660), fy=MathUtils.random(300,350); animateBall(480,215,fx,fy); fieldersChase(fx,fy);
         }
@@ -289,10 +300,17 @@ public final class PixelPennantGame extends ApplicationAdapter {
         float skill=MathUtils.random()+meterQuality()*.45f-distance/350f+(bunt?.05f:0);
         if(skill<.34f){game.recordStrike();message="SWING AND A MISS";callPlay("MISS!");animateBall(458,238,480,205);nextPitch();}
         else if(skill<.55f){game.recordOut();message=bunt?"BUNT - OUT AT FIRST":"GROUNDER - OUT";callPlay("OUT!");animateBall(458,238,565,300);fieldersChase(565,300);nextPitch();}
-        else { int bases=skill>.98f&&!bunt?2:1;game.recordHit(bases);cheerHomeCrowd();phase=Phase.RUNNING;message=bases==2?"DOUBLE - INTO THE GAP!":"SINGLE - CLEAN BASE HIT!";callPlay(bases==2?"DOUBLE!":"SINGLE!");float hx=MathUtils.random(300,660), hy=MathUtils.random(315,350);animateBall(458,238,hx,hy);fieldersChase(hx,hy);runnerT=1f;checkEnd(); }
+        else { int bases=skill>.98f&&!bunt?2:1;game.recordHit(bases);cheerCrowd(bases==2?"DOUBLE!":"BASE HIT!",true);phase=Phase.RUNNING;message=bases==2?"DOUBLE - INTO THE GAP!":"SINGLE - CLEAN BASE HIT!";callPlay(bases==2?"DOUBLE!":"SINGLE!");float hx=MathUtils.random(300,660), hy=MathUtils.random(315,350);animateBall(458,238,hx,hy);fieldersChase(hx,hy);runnerT=1f;checkEnd(); }
     }
-    private void throwBase(int base) { boolean out=MathUtils.random()<.62f+(base==1?.14f:0); animateBall(480,320,base==1?565:base==2?480:base==3?395:480,base==4?246:300); if(out){game.recordOut();message="THROW IN TIME - OUT!";callPlay("OUT!");}else{game.recordHit(1);message="SAFE - BASE HIT!";callPlay("SAFE!");runnerT=1f;} checkEnd(); if(scene==Scene.PLAY){phase=Phase.RUNNING;} }
-    private void runChoice(int choice) { message=choice>0?"RUNNERS ADVANCE":choice<0?"RUNNERS RETURN":"RUNNERS HOLD"; callPlay(choice>0?"ADVANCE!":choice<0?"RETURN!":"HOLD!"); if(choice>0)runnerT=1f; nextPitch(); }
+    private void throwBase(int base) {
+        boolean out=MathUtils.random()<.62f+(base==1?.14f:0);
+        float tx=base==1?565:base==2?480:base==3?395:480, ty=base==4?246:300;
+        animateBall(fieldBallX,fieldBallY,tx,ty);
+        if(out){game.recordOut();message="THROW IN TIME - OUT!";callPlay("OUT!");cheerCrowd("BIG OUT!",false);}
+        else{game.recordHit(1);message="SAFE - BASE HIT!";callPlay("SAFE!");runnerT=1f;if(game.isTorontoBatting())cheerCrowd("SAFE!",true);}
+        checkEnd(); if(scene==Scene.PLAY){phase=Phase.RUNNING;}
+    }
+    private void runChoice(int choice) { message=choice>0?"RUNNERS ADVANCE":choice<0?"RUNNERS RETURN":"RUNNERS HOLD"; callPlay(choice>0?"ADVANCE!":choice<0?"RETURN!":"HOLD!"); if(choice>0){runnerT=1f;if(game.isTorontoBatting())cheerCrowd("RUNNER GOING!",true);} nextPitch(); }
     private void nextPitch() { checkEnd(); if(scene==Scene.PLAY){ phase=game.isTorontoBatting()?Phase.BATTING:Phase.PITCH_TYPE; message=game.isTorontoBatting()?"BLUEBIRDS BATTING - LINE IT UP!":"CHOOSE YOUR PITCH"; } }
     private void checkEnd(){if(game.isGameOver())scene=Scene.FINAL;}
 
