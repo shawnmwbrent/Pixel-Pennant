@@ -51,7 +51,7 @@ public final class PixelPennantGame extends ApplicationAdapter {
     private float runnerT = 0f;
     private int runnerFrom = 0, runnerTo = 0;
     private float fielderT = 0f, fieldBallX = 480f, fieldBallY = 315f;
-    private float swingT = 0f, pitchVisualT = 0f;
+    private float swingT = 0f, pitchVisualT = 0f, crowdCheerT = 0f;
     private boolean batterPitchActive = false;
     private final Color navy = Color.valueOf("071B35"), blue = Color.valueOf("178BDB");
     private final Color cyan = Color.valueOf("52D9FF"), cream = Color.valueOf("FFF3C4");
@@ -84,6 +84,7 @@ public final class PixelPennantGame extends ApplicationAdapter {
         if (runnerT > 0f) runnerT = Math.max(0f, runnerT - dt * 1.8f);
         if (fielderT > 0f) fielderT = Math.max(0f, fielderT - dt * 1.5f);
         if (swingT > 0f) swingT = Math.max(0f, swingT - dt * 4f);
+        if (crowdCheerT > 0f) crowdCheerT = Math.max(0f, crowdCheerT - dt);
         if (scene == Scene.PLAY && phase == Phase.BATTING) {
             pitchVisualT += dt * .7f;
             if (pitchVisualT >= 1f) pitchVisualT = 0f;
@@ -147,7 +148,15 @@ public final class PixelPennantGame extends ApplicationAdapter {
     }
     private void drawBallpark() {
         beginShapes(); rect(0,134,W,406,Color.valueOf("5CC9E8")); rect(0,355,W,45,Color.valueOf("253953"));
-        for(int x=0;x<960;x+=32) rect(x,365+(x%64)/8,22,12,(x/32)%2==0?orange:cream);
+        for(int x=0;x<960;x+=32) {
+            boolean homeFan=(x/32)%3==0;
+            float bounce=(crowdCheerT>0f && homeFan)?((x/32)%2==0?8f:4f):0f;
+            Color fanColor=homeFan?cyan:((x/32)%2==0?orange:cream);
+            rect(x,365+(x%64)/8+bounce,22,12,fanColor);
+            if(crowdCheerT>0f && homeFan){
+                rect(x+3,381+bounce,4,10,cream); rect(x+15,381+bounce,4,10,cream);
+            }
+        }
         rect(0,134,W,225,grass); tri(480,145,100,359,860,359,Color.valueOf("2AA65A"));
         tri(480,155,310,315,650,315,Color.valueOf("D6A05E"));
         diamond(480,255,82,Color.valueOf("E8C47D")); diamond(480,246,7,Color.WHITE);
@@ -192,7 +201,7 @@ public final class PixelPennantGame extends ApplicationAdapter {
     private void drawScoreboard() {
         panel(18,410,924,112);
         // Draw team names twice with a tiny offset for a heavier, more readable pixel look.
-        boldLabel("DET MOTORS",38,490,orange,1.12f); boldLabel("TOR BLUEBIRDS",38,450,cyan,1.12f);
+        label("DET MOTORS",38,490,orange,1.22f); label("TOR BLUEBIRDS",38,450,cyan,1.22f);
         label(String.valueOf(game.awayRuns()),255,490,cream,1.15f); label(String.valueOf(game.homeRuns()),255,450,cream,1.15f);
         label((game.half()==Half.TOP?"TOP ":"BOT ")+game.inning(),330,485,cream,1.15f);
         label("B "+game.balls()+"  S "+game.strikes()+"  O "+game.outs(),440,485,cream,1.02f);
@@ -206,10 +215,22 @@ public final class PixelPennantGame extends ApplicationAdapter {
         if(b[1]) diamond(850,474,7,Color.WHITE);
         if(b[2]) diamond(818,446,7,Color.WHITE);
         if(b[0]) diamond(882,446,7,Color.WHITE);
+        drawBaseRunners(b);
         label(b[0]?"1":"-",878,424,b[0]?cyan:cream,.55f);
         label(b[1]?"2":"-",846,505,b[1]?cyan:cream,.55f);
         label(b[2]?"3":"-",814,424,b[2]?cyan:cream,.55f);
     }
+    private void drawBaseRunners(boolean[] b) {
+        if(b[0]) drawRunner(565,286);
+        if(b[1]) drawRunner(480,337);
+        if(b[2]) drawRunner(395,286);
+    }
+    private void drawRunner(float x,float y) {
+        beginShapes(); shapes.setColor(cyan); shapes.circle(x,y+18,6,10);
+        shapes.rect(x-7,y+5,14,13); shapes.setColor(Color.WHITE); shapes.rect(x-6,y,4,6); shapes.rect(x+2,y,4,6);
+    }
+    private void cheerHomeCrowd(){ if(game!=null && game.isTorontoBatting()) crowdCheerT=1.6f; }
+
     private void drawZone() {
         beginShapes();
         shapes.setColor(new Color(0,0,0,.28f)); shapes.rect(385,170,190,190);
@@ -268,7 +289,7 @@ public final class PixelPennantGame extends ApplicationAdapter {
         float skill=MathUtils.random()+meterQuality()*.45f-distance/350f+(bunt?.05f:0);
         if(skill<.34f){game.recordStrike();message="SWING AND A MISS";callPlay("MISS!");animateBall(458,238,480,205);nextPitch();}
         else if(skill<.55f){game.recordOut();message=bunt?"BUNT - OUT AT FIRST":"GROUNDER - OUT";callPlay("OUT!");animateBall(458,238,565,300);fieldersChase(565,300);nextPitch();}
-        else { int bases=skill>.98f&&!bunt?2:1;game.recordHit(bases);phase=Phase.RUNNING;message=bases==2?"DOUBLE - INTO THE GAP!":"SINGLE - CLEAN BASE HIT!";callPlay(bases==2?"DOUBLE!":"SINGLE!");float hx=MathUtils.random(300,660), hy=MathUtils.random(315,350);animateBall(458,238,hx,hy);fieldersChase(hx,hy);runnerT=1f;checkEnd(); }
+        else { int bases=skill>.98f&&!bunt?2:1;game.recordHit(bases);cheerHomeCrowd();phase=Phase.RUNNING;message=bases==2?"DOUBLE - INTO THE GAP!":"SINGLE - CLEAN BASE HIT!";callPlay(bases==2?"DOUBLE!":"SINGLE!");float hx=MathUtils.random(300,660), hy=MathUtils.random(315,350);animateBall(458,238,hx,hy);fieldersChase(hx,hy);runnerT=1f;checkEnd(); }
     }
     private void throwBase(int base) { boolean out=MathUtils.random()<.62f+(base==1?.14f:0); animateBall(480,320,base==1?565:base==2?480:base==3?395:480,base==4?246:300); if(out){game.recordOut();message="THROW IN TIME - OUT!";callPlay("OUT!");}else{game.recordHit(1);message="SAFE - BASE HIT!";callPlay("SAFE!");runnerT=1f;} checkEnd(); if(scene==Scene.PLAY){phase=Phase.RUNNING;} }
     private void runChoice(int choice) { message=choice>0?"RUNNERS ADVANCE":choice<0?"RUNNERS RETURN":"RUNNERS HOLD"; callPlay(choice>0?"ADVANCE!":choice<0?"RETURN!":"HOLD!"); if(choice>0)runnerT=1f; nextPitch(); }
@@ -292,7 +313,7 @@ public final class PixelPennantGame extends ApplicationAdapter {
         shapes.end(); shapes.begin(ShapeRenderer.ShapeType.Filled);
     }
     private void button(float x,float y,float w,float h,String text,Runnable action){buttons.add(new Button(x,y,w,h,text,action));}
-    private void drawButtons(){for(Button b:buttons){beginShapes();rect(b.x,b.y,b.w,b.h,blue);rect(b.x+5,b.y+5,b.w-10,b.h-10,navy);float fs=b.label.length()>7?.72f:.88f;boldLabel(b.label,b.x+11,b.y+b.h/2+9,cream,fs);}}
+    private void drawButtons(){for(Button b:buttons){beginShapes();rect(b.x,b.y,b.w,b.h,blue);rect(b.x+5,b.y+5,b.w-10,b.h-10,navy);float fs=b.label.length()>7?.78f:.94f;label(b.label,b.x+11,b.y+b.h/2+10,cream,fs);}}
     private void beginShapes(){if(batch.isDrawing())batch.end();if(!shapes.isDrawing())shapes.begin(ShapeRenderer.ShapeType.Filled);}
     private void beginBatch(){if(shapes.isDrawing())shapes.end();if(!batch.isDrawing())batch.begin();}
     private void rect(float x,float y,float w,float h,Color c){beginShapes();shapes.setColor(c);shapes.rect(x,y,w,h);}
