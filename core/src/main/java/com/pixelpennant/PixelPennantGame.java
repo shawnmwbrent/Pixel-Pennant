@@ -190,12 +190,25 @@ public final class PixelPennantGame extends ApplicationAdapter {
         if(t>.82f) label("SWING!",535,245,cream,1.05f);
     }
     private void drawScoreboard() {
-        panel(18,410,924,112); label("DET MOTORS",38,490,orange,1.0f); label("TOR BLUEBIRDS",38,450,cyan,1.0f);
-        label(String.valueOf(game.awayRuns()),235,490,cream,1f); label(String.valueOf(game.homeRuns()),235,450,cream,1f);
-        label((game.half()==Half.TOP?"TOP ":"BOT ")+game.inning(),315,485,cream,1.15f);
-        label("B "+game.balls()+"  S "+game.strikes()+"  O "+game.outs(),430,485,cream,1.05f);
-        label("HITS  "+game.awayHits()+" / "+game.homeHits(),655,485,cream,.78f);
-        boolean[] b=game.bases(); diamond(836,464,12,b[1]?cyan:Color.DARK_GRAY); diamond(812,443,12,b[2]?cyan:Color.DARK_GRAY); diamond(860,443,12,b[0]?cyan:Color.DARK_GRAY);
+        panel(18,410,924,112);
+        // Draw team names twice with a tiny offset for a heavier, more readable pixel look.
+        boldLabel("DET MOTORS",38,490,orange,1.12f); boldLabel("TOR BLUEBIRDS",38,450,cyan,1.12f);
+        label(String.valueOf(game.awayRuns()),255,490,cream,1.15f); label(String.valueOf(game.homeRuns()),255,450,cream,1.15f);
+        label((game.half()==Half.TOP?"TOP ":"BOT ")+game.inning(),330,485,cream,1.15f);
+        label("B "+game.balls()+"  S "+game.strikes()+"  O "+game.outs(),440,485,cream,1.02f);
+        label("HITS "+game.awayHits()+"/"+game.homeHits(),655,485,cream,.82f);
+        boolean[] b=game.bases();
+        label("BASES",782,493,cream,.62f);
+        // Large base-status display: occupied bases glow cyan and get a white center marker.
+        diamond(850,474,18,b[1]?cyan:Color.valueOf("31445C"));
+        diamond(818,446,18,b[2]?cyan:Color.valueOf("31445C"));
+        diamond(882,446,18,b[0]?cyan:Color.valueOf("31445C"));
+        if(b[1]) diamond(850,474,7,Color.WHITE);
+        if(b[2]) diamond(818,446,7,Color.WHITE);
+        if(b[0]) diamond(882,446,7,Color.WHITE);
+        label(b[0]?"1":"-",878,424,b[0]?cyan:cream,.55f);
+        label(b[1]?"2":"-",846,505,b[1]?cyan:cream,.55f);
+        label(b[2]?"3":"-",814,424,b[2]?cyan:cream,.55f);
     }
     private void drawZone() {
         beginShapes();
@@ -279,13 +292,14 @@ public final class PixelPennantGame extends ApplicationAdapter {
         shapes.end(); shapes.begin(ShapeRenderer.ShapeType.Filled);
     }
     private void button(float x,float y,float w,float h,String text,Runnable action){buttons.add(new Button(x,y,w,h,text,action));}
-    private void drawButtons(){for(Button b:buttons){beginShapes();rect(b.x,b.y,b.w,b.h,blue);rect(b.x+5,b.y+5,b.w-10,b.h-10,navy);label(b.label,b.x+14,b.y+b.h/2+7,cream,.7f);}}
+    private void drawButtons(){for(Button b:buttons){beginShapes();rect(b.x,b.y,b.w,b.h,blue);rect(b.x+5,b.y+5,b.w-10,b.h-10,navy);float fs=b.label.length()>7?.72f:.88f;boldLabel(b.label,b.x+11,b.y+b.h/2+9,cream,fs);}}
     private void beginShapes(){if(batch.isDrawing())batch.end();if(!shapes.isDrawing())shapes.begin(ShapeRenderer.ShapeType.Filled);}
     private void beginBatch(){if(shapes.isDrawing())shapes.end();if(!batch.isDrawing())batch.begin();}
     private void rect(float x,float y,float w,float h,Color c){beginShapes();shapes.setColor(c);shapes.rect(x,y,w,h);}
     private void tri(float x1,float y1,float x2,float y2,float x3,float y3,Color c){beginShapes();shapes.setColor(c);shapes.triangle(x1,y1,x2,y2,x3,y3);}
     private void diamond(float x,float y,float r,Color c){tri(x,y+r,x-r,y,x,y-r,c);tri(x,y+r,x+r,y,x,y-r,c);}
     private void label(String text,float x,float y,Color c,float scale){beginBatch();font.getData().setScale(scale);font.setColor(c);font.draw(batch,text,x,y);}
+    private void boldLabel(String text,float x,float y,Color c,float scale){label(text,x+2,y,c,scale);label(text,x,y,c,scale);}
     private void endDrawing(){if(batch.isDrawing())batch.end();if(shapes.isDrawing())shapes.end();}
     @Override public void dispose(){endDrawing();batch.dispose();shapes.dispose();font.dispose();}
 }
