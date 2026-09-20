@@ -9,6 +9,9 @@ public final class BaseballGame {
     private final List<Integer> awayByInning = new ArrayList<>();
     private final List<Integer> homeByInning = new ArrayList<>();
     private int inning = 1, balls, strikes, outs, awayRuns, homeRuns, awayHits, homeHits;
+    private int awayWalks, homeWalks, awayStrikeouts, homeStrikeouts;
+    private int awayDoubles, homeDoubles, awayTriples, homeTriples, awayHomers, homeHomers;
+    private int lastRunsScored, lastRbi;
     private Half half = Half.TOP;
     private boolean first, second, third, gameOver;
 
@@ -20,11 +23,23 @@ public final class BaseballGame {
 
     public void recordBall() {
         requirePlaying();
-        if (++balls >= 4) { forceAdvance(); resetCount(); }
+        if (++balls >= 4) {
+            boolean toronto = isTorontoBatting();
+            int before = toronto ? homeRuns : awayRuns;
+            if (toronto) homeWalks++; else awayWalks++;
+            forceAdvance();
+            int scored = (toronto ? homeRuns : awayRuns) - before;
+            setLastScoring(scored, scored);
+            resetCount();
+            checkWalkOff();
+        }
     }
     public void recordStrike() {
         requirePlaying();
-        if (++strikes >= 3) recordOut();
+        if (++strikes >= 3) {
+            if (isTorontoBatting()) homeStrikeouts++; else awayStrikeouts++;
+            recordOut();
+        }
     }
     public void recordOut() {
         requirePlaying(); resetCount();
@@ -33,8 +48,20 @@ public final class BaseballGame {
     public void recordHit(int bases) {
         requirePlaying();
         if (bases < 1 || bases > 4) throw new IllegalArgumentException("Hit bases must be 1..4");
-        if (isTorontoBatting()) homeHits++; else awayHits++;
-        advance(bases); resetCount();
+        boolean toronto = isTorontoBatting();
+        int before = toronto ? homeRuns : awayRuns;
+        if (toronto) {
+            homeHits++;
+            if (bases == 2) homeDoubles++; else if (bases == 3) homeTriples++; else if (bases == 4) homeHomers++;
+        } else {
+            awayHits++;
+            if (bases == 2) awayDoubles++; else if (bases == 3) awayTriples++; else if (bases == 4) awayHomers++;
+        }
+        advance(bases);
+        int scored = (toronto ? homeRuns : awayRuns) - before;
+        setLastScoring(scored, scored);
+        resetCount();
+        checkWalkOff();
     }
     public void recordHomeRun() { recordHit(4); }
 
@@ -76,6 +103,10 @@ public final class BaseballGame {
         while (awayByInning.size() < inning) awayByInning.add(0);
         while (homeByInning.size() < inning) homeByInning.add(0);
     }
+    private void setLastScoring(int runs, int rbi) { lastRunsScored = runs; lastRbi = rbi; }
+    private void checkWalkOff() {
+        if (half == Half.BOTTOM && inning >= scheduledInnings && homeRuns > awayRuns) gameOver = true;
+    }
     private void resetCount() { balls = strikes = 0; }
     private void requirePlaying() { if (gameOver) throw new IllegalStateException("Game is over"); }
 
@@ -89,6 +120,18 @@ public final class BaseballGame {
     public int homeRuns() { return homeRuns; }
     public int awayHits() { return awayHits; }
     public int homeHits() { return homeHits; }
+    public int awayWalks() { return awayWalks; }
+    public int homeWalks() { return homeWalks; }
+    public int awayStrikeouts() { return awayStrikeouts; }
+    public int homeStrikeouts() { return homeStrikeouts; }
+    public int awayDoubles() { return awayDoubles; }
+    public int homeDoubles() { return homeDoubles; }
+    public int awayTriples() { return awayTriples; }
+    public int homeTriples() { return homeTriples; }
+    public int awayHomers() { return awayHomers; }
+    public int homeHomers() { return homeHomers; }
+    public int lastRunsScored() { return lastRunsScored; }
+    public int lastRbi() { return lastRbi; }
     public boolean[] bases() { return new boolean[]{first, second, third}; }
     public boolean isTorontoBatting() { return half == Half.BOTTOM; }
     public boolean isGameOver() { return gameOver; }
