@@ -76,6 +76,37 @@ class BaseballGameTest {
         assertTrue(first.toString().startsWith("Player[id=tor-01, firstName=Maya"));
     }
 
+    @Test void extraBaseHitsAndScoringAreTracked() {
+        BaseballGame game = new BaseballGame(3);
+        game.recordHit(2);
+        assertEquals(1, game.awayDoubles());
+        game.recordHit(3);
+        assertEquals(1, game.awayTriples());
+        assertEquals(1, game.lastRunsScored());
+        assertEquals(1, game.lastRbi());
+        game.recordHomeRun();
+        assertEquals(1, game.awayHomers());
+    }
+
+    @Test void walksAndStrikeoutsAreTrackedByBattingTeam() {
+        BaseballGame game = new BaseballGame(3);
+        walk(game);
+        assertEquals(1, game.awayWalks());
+        game.recordStrike(); game.recordStrike(); game.recordStrike();
+        assertEquals(1, game.awayStrikeouts());
+    }
+
+    @Test void homeTeamCanWinImmediatelyOnWalkOffHit() {
+        BaseballGame game = new BaseballGame(3);
+        for (int half = 0; half < 5; half++) threeOuts(game);
+        assertEquals(Half.BOTTOM, game.half());
+        assertEquals(3, game.inning());
+        game.recordHomeRun();
+        assertTrue(game.isGameOver());
+        assertEquals(1, game.homeRuns());
+        assertEquals(1, game.lastRbi());
+    }
+
     private static void walk(BaseballGame game) {
         for (int i = 0; i < 4; i++) game.recordBall();
     }
